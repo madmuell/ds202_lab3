@@ -1,0 +1,107 @@
+---
+title: "Lab 3-Team"
+author: "Sydney Thompson"
+date: "3/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Part 1: Extracting and Loading Data
+
+```{r}
+dat <- readxl::read_xls('/Users/sydne/Documents/ds202_hw1/GSS.xls')
+dat
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+dat <- dat %>% rename(Gss_year = 'Gss year for this respondent', happiness = 'General happiness', political_party = 'Political party affiliation', gender = 'Respondents sex', school_completed = 'Highest year of school completed', children = 'Number of children', marital_status = 'Marital status', hrsworked_week = 'Number of hours usually work a week', id = 'Respondent id number', ballot_used = 'Ballot used for interview')
+dat <- dat %>% 
+  mutate(school_completed = as.numeric(school_completed)) %>% na.omit
+```
+
+# Part 2: Exploration
+
+## 1) Find the average years of education for the respondents with each marital status. Arrange your output in a meaningful order and print. Describe any patterns you find.
+
+```{r}
+education <- 
+  dat %>%     
+    group_by(marital_status) %>% 
+    summarize(ave_school_completed = mean(school_completed))
+education
+ggplot(education, aes(x=marital_status, weight=ave_school_completed))+geom_bar()+xlab('Marital Status')+ylab('Average Years of Education')+ggtitle('Relationship between Average Years of Education and Marital Status')
+```
+
+From the visual shown above, respondents who are divorced, were never married or are married completed more years of school than respondents who are separated or widowed. The remaining column for those who did not give a response for marital status had the highest amount of school years completed. 
+
+## 2) Create a single data frame containing records for the better educated respondents with each marital status. A “better educated” respondent is someone who has strictly more years of education than the average among those with the same marital status. Print the structure of the data frame.
+
+```{r}
+better_educated <- filter(dat, school_completed >= education$ave_school_completed & marital_status == 'Divorced', school_completed >= education$ave_school_completed & marital_status == 'Married', school_completed >= education$ave_school_completed & marital_status == 'Never Married', school_completed >= education$ave_school_completed & marital_status == 'No Answer', school_completed >= education$ave_school_completed & marital_status == 'Separated', school_completed >= education$ave_school_completed & marital_status == 'Widowed')
+better_educated
+```
+
+## 3) How is the happiness of a respondent related to his/her marriage status? Define that a person is happy if the response to question is “Very happy” or “Pretty happy”.
+
+```{r}
+dat %>% 
+  group_by(marital_status) %>% summarize(happiness)
+ggplot(dat, aes(x = marital_status)) + geom_bar() + facet_wrap(~ happiness)+xlab('Marital Status')+ylab('Number of Respondents')+ggtitle('Relationship between Happiness and Marital Status')
+```
+
+Although, more respondents who are married and were never married defined themselves as happy, they were also the highest columns for the not too happy graph. Therefore, this contradiction proves that happiness doesn't relate to marital status as there was no distinct pattern difference shown within the facet wrap above.
+
+## 4) Does party affiliation affect the relationship you found in the last question?
+
+```{r}
+dat %>% group_by(political_party) %>% count(happiness)
+ggplot(dat, aes(x = political_party)) + geom_bar() + facet_wrap(~ happiness) + ylab("Number of Respondents") + xlab("Political Party")+ggtitle('Reltionship betwen Political Party Affiliation and Happiness')
+
+```
+
+From the numerical and visual data shown above, most respondents are "pretty happy" with their political affiliation. The happiest political affiliation seems to be those who are not strong democrats. The least happiest political affiliation seems to be respondents who are independent, near republican. As there is also no pattern shown throughout the facet wrap, there is no relationship between happiness and political affiliation.
+
+## 5) How is marital status related to the education of a respondent? What are possible reasons accounting for the patterns you see?
+
+```{r}
+education %>%     
+  group_by(marital_status) %>% summarize(ave_school_completed)
+ggplot(education, aes(x=marital_status, weight=ave_school_completed))+geom_bar()+xlab('Marital Status')+ylab('Average Years of Education')+ggtitle('Relationship between Average Years of Education and Marital Status')
+```
+
+From the graph shown above one can see that those who are widowed or separated have the least amount of schooling completed. Respondents who are widowed may be of older age, meaning they would not have as many opportunities for more years of schooling at their age. Respondents who are separated may have lost sight of their goals from the tragedy of separation and decided to discontinue their education until they recover. Those who are married or divorced seem to have more years of education due to higher motivation from their spouse or if divorced to prove to their ex spouse that they can still continue education without them. Finally, those who did not answer any marital status show to have the highest years of completed education probably due to younger age, most likely not married yet and college students, meaning they have more opportunities at their age for more years of schooling. 
+
+## 6) Explore two more interesting questions, and answer those questions using the GSS data.
+
+First question: Does the number of children have an effect on the respondents happiness?
+
+```{r}
+dat %>%
+group_by(children) %>%
+count(children)
+dat %>%
+group_by(children) %>%
+count(happiness)
+ggplot(dat, aes(x = children)) + geom_bar() + facet_wrap(~ happiness) + ylab('Number of Responses') + xlab('Amount of Children')+ggtitle('Relationship between Amount of Children and Happiness')
+```
+
+From the facet wrap shown above, it seems that people with less children are the happiest although, if you calculate the percentages of the respondents who said they were happy based on how many children that they have, they were all around 80%. When looking at the ratios between the amount of responses and happy individuals, it seems like those who have two children are the happiest, whereas those with 7 or more children are less happy. Overall, this data shows that the amount of children has no effect on respondents happiness as there is no pattern between the graphs. 
+
+Second Question: Does the gender of the respondent have an effect on the respondents happiness?
+
+```{r}
+dat %>%
+group_by(gender) %>%
+count(gender)
+dat %>%
+group_by(gender) %>%
+count(happiness)
+ggplot(dat, aes(x = gender)) + geom_bar() + facet_wrap(~ happiness) + ylab('Number of Responses') + xlab('Gender of Respondent')+ggtitle('Relationship between Gender of Respondent and Happiness')
+```
+
+From the graphs shown above, one can see that females seem to be the happiest about their gender although, if you look at the numerical values there are more female respondents who participated in the vote. On the contrary, because more females participated females also show to be unhappy. Thus being said, the gender of the respondent does not effect the happiness of the respondent. 
