@@ -1,0 +1,101 @@
+---
+title: "individual1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Lab 3 - Madalyn Mueller
+
+```{r}
+dat <- readxl::read_xls('/Users/maddiemueller/Desktop/GSS.xls')
+dat
+library(dplyr)
+library(ggplot2)
+```
+
+```{r}
+dat <- dat %>% rename(gssyear = 'Gss year for this respondent', happiness = 'General happiness', party = 'Political party affiliation', sex = 'Respondents sex', school = 'Highest year of school completed', kids = 'Number of children', married = 'Marital status', work = 'Number of hours usually work a week', id = 'Respondent id number', ballot = 'Ballot used for interview')
+dat <- dat %>% 
+  mutate(school = as.numeric(school)) %>% na.omit
+```
+
+## 1) Find the average years of education for the respondents with each marital status. Arrange your output in a meaningful order and print. Describe any patterns you find.
+
+```{r}
+education <- 
+  dat %>%     
+    group_by(married) %>% 
+    summarize(aveschool = mean(school))
+education
+ggplot(education, aes(x=married, weight=aveschool))+geom_bar()+xlab('Marital Status')+ylab('Average Years of Education')+ggtitle('Relationship between Average Years of Education and Marital Status')
+```
+
+It appears that those who opted out of answering had the highest average years of schooling out of all of the marriage statuses. Of the people that did respond to this question, those who were widowed had the least amount of school and those who were never married had the highest amount of schooling.
+
+## 2) Create a single data frame containing records for the better educated respondents with each marital status. A “better educated” respondent is someone who has strictly more years of education than the average among those with the same marital status. Print the structure of the data frame.
+
+```{r}
+highed <- filter(dat, school >= education$aveschool & married == 'Divorced', school >= education$aveschool & married == 'Married', school >= education$aveschool & married == 'Never Married', school >= education$aveschool & married == 'No Answer', school >= education$aveschool & married == 'Separated', school >= education$aveschool & married == 'Widowed')
+highed
+```
+
+## 3) How is the happiness of a respondent related to his/her marriage status? Define that a person is happy if the response to question is “Very happy” or “Pretty happy”.
+
+```{r}
+dat %>% 
+  group_by(married) %>% summarize(happiness)
+ggplot(dat, aes(x = married)) + geom_bar() + facet_wrap(~ happiness)+xlab('Marital Status')+ylab('Number of Respondents')+ggtitle('Relationship between Happiness and Marital Status')
+```
+
+Most people, regardless of marital status, are happy. Married people seem to be the happiest people. They are also the largest column in the "Not too happy" graph. Those who were never married appear to be the second happiest people. It appears that happiness doesn't relate to marital status based on this data.
+
+## 4) Does party affiliation affect the relationship you found in the last question?
+
+```{r}
+dat %>% group_by(party) %>% count(happiness)
+ggplot(dat, aes(x = party)) + geom_bar() + facet_wrap(~ happiness) + ylab("Number of Respondents") + xlab("Political Party")+ggtitle('Reltionship betwen Political Party Affiliation and Happiness')
+```
+It appears  that the happiest political party identification is the not strong democrat. It looks like the political party with the least amount of happy people is the independent near republican. The data seems to be pretty constant throughout the chart, so I don't think that political party has an effect on happiness.
+
+## 5) How is marital status related to the education of a respondent? What are possible reasons accounting for the patterns you see?
+
+```{r}
+education %>%     
+  group_by(married) %>% summarize(aveschool)
+ggplot(education, aes(x=married, weight=aveschool))+geom_bar()+xlab('Marital Status')+ylab('Average Years of Education')+ggtitle('Relationship between Average Years of Education and Marital Status')
+```
+
+It looks like those who were widowed had the least amount of education on average. I am assuming that this is because they tend to be older and had less schooling available to them as they grew older, but not every widowed person is old. Those who were never married seem to have the most education on average, and I am assuming this is because most people who haven't been married are younger or they are not married yet because they are still going through school.
+
+## 6) Explore two more interesting questions, and answer those questions using the GSS data.
+
+First, we are going to examine if the number of children has an effect on happiness.
+
+```{r}
+dat %>%
+group_by(kids) %>%
+count(kids)
+dat %>%
+group_by(kids) %>%
+count(happiness)
+ggplot(dat, aes(x = kids)) + geom_bar() + facet_wrap(~ happiness) + ylab('Number of Responses') + xlab('Amount of Children')+ggtitle('Relationship between Amount of Children and Happiness')
+```
+
+It looks like people with less children are the happiest by looking at the graph. When actually, if you get percentages of people who said they were happy based on how many children that they have, they were all around 80%. Based on looking at the amount happiness responses and the ratio of happy people, those who have 2 children seemed to be the most happy, while those with 7 or 8+ children seem to be the least happy, but they were all so close. Based on this data, I don't think the amount of children has an effect on happiness. 
+
+Now we are going to see if the sex of a person has an effect on happiness.
+
+```{r}
+dat %>%
+group_by(sex) %>%
+count(sex)
+dat %>%
+group_by(sex) %>%
+count(happiness)
+ggplot(dat, aes(x = sex)) + geom_bar() + facet_wrap(~ happiness) + ylab('Number of Responses') + xlab('Gender of Respondent')+ggtitle('Relationship between Gender of Respondent and Happiness')
+```
+
+It appears that females are the happiest based on looking at the graph, but if you look at the number of people in the data set there are way more females. It looks like females are the most unhappy as well, but I think that this is because there are way more females in the data set. Therefore, sex does not have an effect on happiness.
